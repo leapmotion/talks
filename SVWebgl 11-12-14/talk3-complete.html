@@ -1,0 +1,23 @@
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="assets/main.css" />
+  <title> Leap Loop </title>
+
+  <script src="//js.leapmotion.com/leap-0.6.3.js"></script>
+</head>
+<body>
+
+<div id="output"></div>
+
+</body>
+
+<script>
+
+  Leap.loop(function(frame){
+    document.getElementById('output').innerHTML = frame.id
+  });
+
+  Leap.loopController.loopWhileDisconnected = true;
+
+</script>
+</html>

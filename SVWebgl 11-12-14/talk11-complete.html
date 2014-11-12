@@ -1,0 +1,182 @@
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="assets/main.css" />
+  <title> Physics [live] </title>
+
+  <script src="//js.leapmotion.com/leap-0.6.3.js"></script>
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.min.js"></script>
+  <script src="//js.leapmotion.com/leap-plugins-0.1.9.js"></script>
+  <script src="assets/leap.bone-hand.js"></script>
+  <script src="assets/leap.transform.js"></script>
+
+  <script src="assets/VREffect.js"></script>
+  <script src="assets/VRControls.js"></script>
+
+  <script src="//js.leapmotion.com/leap-plugins-0.1.9-utils.js"></script>
+
+  <script src="assets/leap.pinchEvent.js"></script>
+</head>
+<body>
+
+<div id="output"></div>
+
+</body>
+
+<script>
+
+  Leap.loop(function(frame){
+    document.getElementById('output').innerHTML = frame.id
+  })
+  .use('transform', {
+    vr: true
+  })
+  .use('boneHand', {
+    targetEl: document.body
+  })
+  .use('pinchEvent');
+
+  Leap.loopController.loopWhileDisconnected = true;
+
+  var boneHand = Leap.loopController.plugins.boneHand;
+  var renderer = boneHand.renderer;
+  var scene = boneHand.scene;
+  var camera = boneHand.camera;
+
+  // *
+  camera.position.set(0,0.5,1);
+  camera.near = 0.0001; // 1 mm
+  camera.far = 10; // 10 m
+  camera.updateProjectionMatrix();
+
+
+
+
+
+  var vrEffect = new THREE.VREffect(renderer);
+  var vrControls = new THREE.VRControls(camera);
+
+
+  var onkey = function(event) {
+    if (event.key === 'z') {
+      vrControls.zeroSensor();
+    }
+    if (event.key === 'f') {
+      return vrEffect.setFullScreen(true);
+    }
+  };
+
+  window.addEventListener("keypress", onkey, true);
+
+
+  var plotter = new LeapDataPlotter();
+  Leap.loopController.on('frame', function(frame){
+
+    var hand = frame.hands[0];
+
+    if (!hand) return;
+
+    plotter.plot('pinchStr', hand.pinchStrength)
+
+  });
+
+
+  spheres = [];
+  for (var i = 0; i < 1; i++){
+    var sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.03, 20, 20),
+      new THREE.MeshPhongMaterial({
+        color: 0xe6e6e6,
+        specular: 0xe6e6e6
+      })
+    );
+    sphere.position.set(0,-0.1,-0.39);
+    spheres.push(sphere);
+    scene.add(sphere);
+    sphere.visible = false;
+
+    sphere.lastPosition = sphere.position.clone();
+    sphere.pinched = false;
+    sphere.tmpPosition = new THREE.Vector3;
+  }
+
+
+  Leap.loopController.on('pinch', function(hand){
+    var sphere = spheres.pop();
+    sphere.visible = true;
+    sphere.pinched = true;
+    hand.data('sphere', sphere);
+
+    console.log('pinch');
+
+  }).on('unpinch', function(hand){
+    var sphere = hand.data('sphere');
+    console.log('unpinch');
+
+    if (!sphere) return;
+
+    sphere.pinched = false;
+
+    spheres.push(sphere);
+    hand.data('sphere', null);
+
+  });
+
+
+
+  Leap.loopController.on('hand', function(hand){
+
+    var sphere = hand.data('sphere');
+
+    if (!sphere) return;
+
+    sphere.pinched = false;
+
+    sphere.lastPosition = sphere.position.clone();
+
+    sphere.position.fromArray(hand.palmPosition);
+
+  });
+
+
+
+  // todo - release new plugins V which has this working
+  // note - that should become postFrame later
+  boneHand.render = function(){
+
+
+    var sphere;
+
+    for (var i=0; i < spheres.length; i++){
+
+      sphere = spheres[i];
+
+      if (sphere.pinched) continue;
+
+      var newPos = (new THREE.Vector3).subVectors(sphere.position, sphere.lastPosition);
+
+      newPos.multiplyScalar(0.96);
+
+      newPos.y -= 0.0005;
+
+//      console.log( sphere.lastPosition.x.toPrecision(3),  sphere.position.x.toPrecision(3), newPos.x.toPrecision(3));
+
+      newPos.add(sphere.position);
+
+      sphere.lastPosition = sphere.position.clone();
+      sphere.position.copy(newPos);
+
+//      console.log( sphere.lastPosition.x.toPrecision(3),  sphere.position.x.toPrecision(3), newPos.x.toPrecision(3));
+    }
+
+
+
+    plotter.update();
+
+    vrControls.update();
+    vrEffect.render(scene, camera);
+  };
+
+
+</script>
+</html>

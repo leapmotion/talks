@@ -1,0 +1,89 @@
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="assets/main.css" />
+  <title> Plotter </title>
+
+  <script src="//js.leapmotion.com/leap-0.6.3.js"></script>
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.min.js"></script>
+  <script src="//js.leapmotion.com/leap-plugins-0.1.9.js"></script>
+  <script src="assets/leap.bone-hand.js"></script>
+  <script src="assets/leap.transform.js"></script>
+
+  <script src="assets/VREffect.js"></script>
+  <script src="assets/VRControls.js"></script>
+
+  <script src="//js.leapmotion.com/leap-plugins-0.1.9-utils.js"></script>
+</head>
+<body>
+
+<div id="output"></div>
+
+</body>
+
+<script>
+
+  Leap.loop(function(frame){
+    document.getElementById('output').innerHTML = frame.id
+  })
+  .use('transform', {
+    vr: true
+  })
+  .use('boneHand', {
+    targetEl: document.body
+  });
+
+  Leap.loopController.loopWhileDisconnected = true;
+
+  var boneHand = Leap.loopController.plugins.boneHand;
+  var renderer = boneHand.renderer;
+  var scene = boneHand.scene;
+  var camera = boneHand.camera;
+
+  // *
+  camera.position.set(0,0,0);
+  camera.near = 0.0001; // 1 mm
+  camera.far = 10; // 10 m
+  camera.updateProjectionMatrix();
+
+
+
+
+
+  var vrEffect = new THREE.VREffect(renderer);
+  var vrControls = new THREE.VRControls(camera);
+
+
+  var onkey = function(event) {
+    if (event.key === 'z') {
+      vrControls.zeroSensor();
+    }
+    if (event.key === 'f') {
+      return vrEffect.setFullScreen(true);
+    }
+  };
+
+  window.addEventListener("keypress", onkey, true);
+
+
+  var plotter = new LeapDataPlotter();
+  Leap.loopController.on('hand', function(hand){
+
+    plotter.plot('pinchStr' + hand.id, hand.pinchStrength)
+
+  });
+
+
+
+  // todo - release new plugins V which has this working
+  // note - that should become postFrame later
+  boneHand.render = function(){
+    plotter.update();
+
+    vrControls.update();
+    vrEffect.render(scene, camera);
+  };
+
+
+</script>
+</html>
