@@ -1,5 +1,6 @@
 <html>
 <head>
+  <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="assets/main.css" />
   <title> Physics [live] </title>
 
@@ -44,7 +45,7 @@
   var camera = boneHand.camera;
 
   // *
-  camera.position.set(0,0.5,1);
+  camera.position.set(0,0,0);
   camera.near = 0.0001; // 1 mm
   camera.far = 10; // 10 m
   camera.updateProjectionMatrix();
@@ -103,6 +104,8 @@
 
   Leap.loopController.on('pinch', function(hand){
     var sphere = spheres.pop();
+
+    if (!sphere) return;
     sphere.visible = true;
     sphere.pinched = true;
     hand.data('sphere', sphere);
@@ -114,8 +117,6 @@
     console.log('unpinch');
 
     if (!sphere) return;
-
-    sphere.pinched = false;
 
     spheres.push(sphere);
     hand.data('sphere', null);
@@ -130,8 +131,6 @@
 
     if (!sphere) return;
 
-    sphere.pinched = false;
-
     sphere.lastPosition = sphere.position.clone();
 
     sphere.position.fromArray(hand.palmPosition);
@@ -143,32 +142,6 @@
   // todo - release new plugins V which has this working
   // note - that should become postFrame later
   boneHand.render = function(){
-
-    var sphere;
-
-    for (var i=0; i < spheres.length; i++){
-
-      sphere = spheres[i];
-
-      if (sphere.pinched) continue;
-
-      var newPos = (new THREE.Vector3).subVectors(sphere.position, sphere.lastPosition);
-
-      newPos.multiplyScalar(0.96);
-
-      newPos.y -= 0.0005;
-
-//      console.log( sphere.lastPosition.x.toPrecision(3),  sphere.position.x.toPrecision(3), newPos.x.toPrecision(3));
-
-      newPos.add(sphere.position);
-
-      sphere.lastPosition = sphere.position.clone();
-      sphere.position.copy(newPos);
-
-//      console.log( sphere.lastPosition.x.toPrecision(3),  sphere.position.x.toPrecision(3), newPos.x.toPrecision(3));
-    }
-
-
 
     plotter.update();
 

@@ -1,5 +1,6 @@
 <html>
 <head>
+  <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="assets/main.css" />
   <title> Physics [live] </title>
 
@@ -44,7 +45,7 @@
   var camera = boneHand.camera;
 
   // *
-  camera.position.set(0,0.5,1);
+  camera.position.set(0,0,0);
   camera.near = 0.0001; // 1 mm
   camera.far = 10; // 10 m
   camera.updateProjectionMatrix();
@@ -157,7 +158,7 @@
 
       newPos.multiplyScalar(0.96);
 
-      newPos.y -= 0.0005;
+//      newPos.y -= 0.0005;
 
 //      console.log( sphere.lastPosition.x.toPrecision(3),  sphere.position.x.toPrecision(3), newPos.x.toPrecision(3));
 
@@ -170,6 +171,8 @@
     }
 
 
+
+    console.log(camera.position);
 
     plotter.update();
 
