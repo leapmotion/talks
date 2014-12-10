@@ -4,7 +4,7 @@
   <link rel="stylesheet" type="text/css" href="assets/main.css" />
   <title> Bone Hand </title>
 
-  <script src="//js.leapmotion.com/leap-0.6.3.js"></script>
+  <script src="//js.leapmotion.com/leap-0.6.4.js"></script>
   <!--<script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js"></script>-->
   <!--<script src="//js.leapmotion.com/leap-plugins-0.1.9.js"></script>-->
 </head>
@@ -19,8 +19,6 @@
   Leap.loop(function(frame){
     document.getElementById('output').innerHTML = frame.id
   });
-
-  Leap.loopController.loopWhileDisconnected = true;
 
 </script>
 </html>

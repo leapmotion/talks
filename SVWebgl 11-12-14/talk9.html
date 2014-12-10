@@ -4,12 +4,10 @@
   <link rel="stylesheet" type="text/css" href="assets/main.css" />
   <title> Interacting </title>
 
-  <script src="//js.leapmotion.com/leap-0.6.3.js"></script>
+  <script src="//js.leapmotion.com/leap-0.6.4.js"></script>
 
   <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.min.js"></script>
-  <script src="//js.leapmotion.com/leap-plugins-0.1.9.js"></script>
-  <script src="assets/leap.bone-hand.js"></script>
-  <script src="assets/leap.transform.js"></script>
+  <script src="//js.leapmotion.com/leap-plugins-0.1.10.js"></script>
 
   <script src="assets/VREffect.js"></script>
   <script src="assets/VRControls.js"></script>
@@ -44,14 +42,6 @@
   var scene = boneHand.scene;
   var camera = boneHand.camera;
 
-  // *
-  camera.position.set(0,0,0);
-  camera.near = 0.0001; // 1 mm
-  camera.far = 10; // 10 m
-  camera.updateProjectionMatrix();
-
-
-
 
 
   var vrEffect = new THREE.VREffect(renderer);
@@ -70,6 +60,7 @@
   window.addEventListener("keypress", onkey, true);
 
 
+
   var plotter = new LeapDataPlotter();
   Leap.loopController.on('frame', function(frame){
 
@@ -83,43 +74,6 @@
 
 
 
-
-  var spheres = [];
-
-  for (var i = 0; i < 2; i++){
-    var sphere = new THREE.Mesh(
-      new  THREE.SphereGeometry(0.03, 20,20),
-      new THREE.MeshPhongMaterial({
-              color: 0xe6e6e6,
-              specular: 0xe6e6e6
-            })
-    );
-
-//    sphere.visible = false;
-    spheres.push(sphere);
-    sphere.position.set(0,0,0);
-    scene.add(sphere);
-  }
-
-  Leap.loopController.on('pinch', function(hand){
-
-    console.log('pinch');
-
-    var sphere = spheres.pop();
-    sphere.visible = true;
-
-    hand.data('sphere', sphere);
-
-  }).on('unpinch', function(hand){
-    console.log('unpinch');
-
-    var sphere =  hand.data('sphere');
-
-    if (!sphere) return;
-    sphere.visible = false;
-    spheres.push(sphere);
-
-  })
 
 
 

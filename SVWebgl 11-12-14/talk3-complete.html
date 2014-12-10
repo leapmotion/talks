@@ -4,7 +4,7 @@
   <link rel="stylesheet" type="text/css" href="assets/main.css" />
   <title> Leap Loop </title>
 
-  <script src="//js.leapmotion.com/leap-0.6.3.js"></script>
+  <script src="//js.leapmotion.com/leap-0.6.4.js"></script>
 </head>
 <body>
 
@@ -17,8 +17,6 @@
   Leap.loop(function(frame){
     document.getElementById('output').innerHTML = frame.id
   });
-
-  Leap.loopController.loopWhileDisconnected = true;
 
 </script>
 </html>
