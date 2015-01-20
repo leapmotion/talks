@@ -48,10 +48,10 @@
 
 
   var onkey = function(event) {
-    if (event.key === 'z') {
+    if (event.key === 'z' || event.keyCode == 122) {
       vrControls.zeroSensor();
     }
-    if (event.key === 'f') {
+    if (event.key === 'f' || event.keyCode == 102) {
       return vrEffect.setFullScreen(true);
     }
   };
@@ -72,7 +72,7 @@
 
 
   spheres = [];
-  for (var i = 0; i < 1; i++){
+  for (var i = 0; i < 4; i++){
     var sphere = new THREE.Mesh(
       new THREE.SphereGeometry(0.03, 20, 20),
       new THREE.MeshPhongMaterial({
