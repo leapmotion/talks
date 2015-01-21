@@ -35,10 +35,14 @@
   })
   .use('pinchEvent');
 
+  var transform = Leap.loopController.plugins.transform;
+
   var boneHand = Leap.loopController.plugins.boneHand;
   var renderer = boneHand.renderer;
   var scene = boneHand.scene;
   var camera = boneHand.camera;
+
+  transform.effectiveParent = camera;
 
 
   var vrEffect = new THREE.VREffect(renderer);
