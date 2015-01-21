@@ -1,5 +1,5 @@
 /*!                                                              
- * LeapJS v0.6.3                                                  
+ * LeapJS v0.6.4                                                  
  * http://github.com/leapmotion/leapjs/                                        
  *                                                                             
  * Copyright 2013 LeapMotion, Inc. and other contributors                      
@@ -498,6 +498,13 @@ var process=require("__browserify_process");var Frame = require('./frame')
  *
  * Polling is an appropriate strategy for applications which already have an
  * intrinsic update loop, such as a game.
+ *
+ * loopWhileDisconnected defaults to true, and maintains a 60FPS frame rate even when Leap Motion is not streaming
+ * data at that rate (such as no hands in frame).  This is important for VR/WebGL apps which rely on rendering for
+ * regular visual updates, including from other input devices.  Flipping this to false should be considered an
+ * optimization for very specific use-cases.
+ *
+ *
  */
 
 
@@ -514,20 +521,26 @@ var Controller = module.exports = function(opts) {
   opts = _.defaults(opts || {}, {
     frameEventName: this.useAnimationLoop() ? 'animationFrame' : 'deviceFrame',
     suppressAnimationLoop: !this.useAnimationLoop(),
-    loopWhileDisconnected: false,
+    loopWhileDisconnected: true,
     useAllPlugins: false,
     checkVersion: true
   });
 
   this.animationFrameRequested = false;
-  this.onAnimationFrame = function() {
-    controller.emit('animationFrame', controller.lastConnectionFrame);
-    if (controller.loopWhileDisconnected && (controller.connection.focusedState || controller.connection.opts.background) ){
+  this.onAnimationFrame = function(timestamp) {
+    if (controller.lastConnectionFrame.valid){
+      controller.emit('animationFrame', controller.lastConnectionFrame);
+    }
+    controller.emit('frameEnd', timestamp);
+    if (
+      controller.loopWhileDisconnected &&
+      ( ( controller.connection.focusedState !== false )  // loop while undefined, pre-ready.
+        || controller.connection.opts.background) ){
       window.requestAnimationFrame(controller.onAnimationFrame);
     }else{
       controller.animationFrameRequested = false;
     }
-  }
+  };
   this.suppressAnimationLoop = opts.suppressAnimationLoop;
   this.loopWhileDisconnected = opts.loopWhileDisconnected;
   this.frameEventName = opts.frameEventName;
@@ -552,6 +565,8 @@ var Controller = module.exports = function(opts) {
   if (opts.useAllPlugins) this.useRegisteredPlugins();
   this.setupFrameEvents(opts);
   this.setupConnectionEvents();
+  
+  this.startAnimationLoop(); // immediately when started
 }
 
 Controller.prototype.gesture = function(type, cb) {
@@ -607,7 +622,7 @@ Controller.prototype.connected = function() {
   return !!this.connection.connected;
 }
 
-Controller.prototype.runAnimationLoop = function(){
+Controller.prototype.startAnimationLoop = function(){
   if (!this.suppressAnimationLoop && !this.animationFrameRequested) {
     this.animationFrameRequested = true;
     window.requestAnimationFrame(this.onAnimationFrame);
@@ -667,7 +682,7 @@ Controller.prototype.processFrame = function(frame) {
   }
   // lastConnectionFrame is used by the animation loop
   this.lastConnectionFrame = frame;
-  this.runAnimationLoop();
+  this.startAnimationLoop(); // Only has effect if loopWhileDisconnected: false
   this.emit('deviceFrame', frame);
 }
 
@@ -785,7 +800,17 @@ Controller.prototype.setupConnectionEvents = function() {
     }
   }
   // Delegate connection events
-  this.connection.on('focus', function() { controller.emit('focus'); });
+  this.connection.on('focus', function() {
+
+    if ( controller.loopWhileDisconnected ){
+
+      controller.startAnimationLoop();
+
+    }
+
+    controller.emit('focus');
+
+  });
   this.connection.on('blur', function() { controller.emit('blur') });
   this.connection.on('protocol', function(protocol) {
 
@@ -1049,10 +1074,10 @@ var setPluginMethods = function(pluginName, type, hash){
 
   switch (type) {
     case 'frame':
-      klass = Frame
+      klass = Frame;
       break;
     case 'hand':
-      klass = Hand
+      klass = Hand;
       break;
     case 'pointable':
       klass = Pointable;
@@ -1100,7 +1125,7 @@ Controller.prototype.use = function(pluginName, options) {
   options || (options = {});
 
   if (this.plugins[pluginName]){
-    _.extend(this.plugins[pluginName], options)
+    _.extend(this.plugins[pluginName], options);
     return this;
   }
 
@@ -1154,16 +1179,16 @@ Controller.prototype.stopUsing = function (pluginName) {
 
   if (extMethodHashes){
     for (i = 0; i < extMethodHashes.length; i++){
-      klass = extMethodHashes[i][0]
-      extMethodHash = extMethodHashes[i][1]
+      klass = extMethodHashes[i][0];
+      extMethodHash = extMethodHashes[i][1];
       for (var methodName in extMethodHash) {
-        delete klass.prototype[methodName]
-        delete klass.Invalid[methodName]
+        delete klass.prototype[methodName];
+        delete klass.Invalid[methodName];
       }
     }
   }
 
-  delete this.plugins[pluginName]
+  delete this.plugins[pluginName];
 
   return this;
 }
@@ -2980,6 +3005,15 @@ module.exports = {
   vec3: require("gl-matrix").vec3,
   loopController: undefined,
   version: require('./version.js'),
+
+  /**
+   * Expose utility libraries for convenience
+   * Use carefully - they may be subject to upgrade or removal in different versions of LeapJS.
+   *
+   */
+  _: require('underscore'),
+  EventEmitter: require('events').EventEmitter,
+
   /**
    * The Leap.loop() function passes a frame of Leap data to your
    * callback function and then calls window.requestAnimationFrame() after
@@ -3012,7 +3046,7 @@ module.exports = {
    * ```
    */
   loop: function(opts, callback) {
-    if (opts && callback === undefined && (!opts.frame && !opts.hand)) {
+    if (opts && callback === undefined &&  ( ({}).toString.call(opts) === '[object Function]' ) ) {
       callback = opts;
       opts = {};
     }
@@ -3037,7 +3071,7 @@ module.exports = {
   }
 }
 
-},{"./circular_buffer":2,"./controller":5,"./finger":7,"./frame":8,"./gesture":9,"./hand":10,"./interaction_box":12,"./pointable":14,"./protocol":15,"./ui":16,"./version.js":19,"gl-matrix":23}],12:[function(require,module,exports){
+},{"./circular_buffer":2,"./controller":5,"./finger":7,"./frame":8,"./gesture":9,"./hand":10,"./interaction_box":12,"./pointable":14,"./protocol":15,"./ui":16,"./version.js":19,"events":21,"gl-matrix":23,"underscore":24}],12:[function(require,module,exports){
 var glMatrix = require("gl-matrix")
   , vec3 = glMatrix.vec3;
 
@@ -3633,10 +3667,10 @@ _.extend(Region.prototype, EventEmitter.prototype)
 },{"events":21,"underscore":24}],19:[function(require,module,exports){
 // This file is automatically updated from package.json by grunt.
 module.exports = {
-  full: '0.6.3',
+  full: '0.6.4',
   major: 0,
   minor: 6,
-  dot: 3
+  dot: 4
 }
 },{}],20:[function(require,module,exports){
 

@@ -35,8 +35,6 @@
   })
   .use('pinchEvent');
 
-  Leap.loopController.loopWhileDisconnected = true;
-
   var boneHand = Leap.loopController.plugins.boneHand;
   var renderer = boneHand.renderer;
   var scene = boneHand.scene;
@@ -130,9 +128,6 @@
   });
 
 
-
-  // todo - release new plugins V which has this working
-  // note - that should become postFrame later
   boneHand.render = function(){
 
     plotter.update();
